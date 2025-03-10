@@ -13,15 +13,14 @@ contract TicketResell is ERC721, ERC721URIStorage {
         bool onSale;
         uint256 price;
         address seller;
-        string metadata;
     }
 
     mapping(uint256 => TicketsOnSale) public resaleTickets;
 
-    event TicketListed(uint256 indexed tokenId, uint256 price, address indexed seller, string metadata);
+    event TicketListed(uint256 indexed tokenId, uint256 price, address indexed seller);
     event TicketPurchased(uint256 indexed tokenId, uint256 price, address indexed buyer);
 
-    function listTicket(string memory metadataURI, uint256 price, string memory metadata) public {
+    function listTicket(string memory metadataURI, uint256 price) public {
         require(price > 0, "TicketResell: price must be greater than 0");
 
         ticketId++;
@@ -33,30 +32,29 @@ contract TicketResell is ERC721, ERC721URIStorage {
         resaleTickets[tokenId] = TicketsOnSale({
             onSale: true,
             price: price,
-            seller: msg.sender,
-            metadata: metadata
+            seller: msg.sender
         });
 
-        emit TicketListed(tokenId, price, msg.sender, metadata);
+        emit TicketListed(tokenId, price, msg.sender);
     }
 
     function buyTicket(uint256 tokenId) public payable {
         TicketsOnSale storage ticket = resaleTickets[tokenId];
 
-        require(ticket.onSale, "TicketResell: Ticket is not on sale");
-        require(msg.value == ticket.price, "TicketResell: Incorrect price");
+        require(ticket.onSale, "TicketResell: ticket is not on sale");
+        require(msg.value == ticket.price, "TicketResell: incorrect price");
 
         address seller = ticket.seller;
+
         require(seller != msg.sender, "TicketResell: Cannot buy your own ticket");
 
-        require(isApprovedForAll(seller, address(this)), "TicketResell: Contract is not approved");
+        require(getApproved(tokenId) == address(this) || isApprovedForAll(seller, address(this)), 
+                "TicketResell: Contract is not approved to transfer this ticket");
 
-        // Transfer ticket ownership
         _transfer(seller, msg.sender, tokenId);
         payable(seller).transfer(msg.value);
 
-        // Update ticket sale status instead of deleting it
-        ticket.onSale = false;
+        // delete resaleTickets[tokenId];
 
         emit TicketPurchased(tokenId, msg.value, msg.sender);
     }
@@ -70,20 +68,10 @@ contract TicketResell is ERC721, ERC721URIStorage {
     }
 
     function getAllTickets() public view returns (uint256[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 1; i <= ticketId; i++) {
-            if (_exists(i)) {
-                count++;
-            }
-        }
+        uint256[] memory tickets = new uint256[](ticketId);
 
-        uint256[] memory tickets = new uint256[](count);
-        uint256 index = 0;
         for (uint256 i = 1; i <= ticketId; i++) {
-            if (_exists(i)) {
-                tickets[index] = i;
-                index++;
-            }
+            tickets[i - 1] = i;
         }
 
         return tickets;

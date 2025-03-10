@@ -11,6 +11,44 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef } from "react";
 import ReclaimDemo from "@/components/ReclaimProvider";
+import { useWriteContract } from "wagmi";
+import abi from "@/constants";
+
+const PINATA_API_KEY = "02a1f4eed8bcadfe1f4c";
+const PINATA_SECRET_API_KEY =
+  "5f34f3181f286daa49c5d8a7be025aa6d3c4dc8b46dae65b9f018166306b38c7";
+
+const uploadMetadataToPinata = async (
+  imageCID: string,
+  eventDate: string = "No date specified",
+  eventTime: string = "No time specified"
+) => {
+  const metadata = {
+    name: "NFT Ticket",
+    description: "Exclusive Event Ticket",
+    image: `ipfs://${imageCID}`,
+    attributes: [
+      { trait_type: "EventDate", value: eventDate },
+      { trait_type: "EventTime", value: eventTime },
+    ],
+  };
+
+  const response = await fetch(
+    "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        pinata_api_key: PINATA_API_KEY,
+        pinata_secret_api_key: PINATA_SECRET_API_KEY,
+      },
+      body: JSON.stringify(metadata),
+    }
+  );
+
+  const result = await response.json();
+  return `ipfs://${result.IpfsHash}`;
+};
 
 export default function List() {
   const [isDragging, setIsDragging] = useState(false);
@@ -18,6 +56,53 @@ export default function List() {
   const [file, setFile] = useState<File | null>(null);
   const [showModal, setShowModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageURI, setImageURI] = useState("");
+  const [metadataURI, setMetadataURI] = useState("");
+
+  const uploadToPinata = async (
+    fileToUpload: File,
+    eventDate: string,
+    eventTime: string
+  ) => {
+    if (!fileToUpload) {
+      throw new Error("No file selected");
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", fileToUpload);
+
+      const response = await fetch(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        {
+          method: "POST",
+          headers: {
+            pinata_api_key: PINATA_API_KEY,
+            pinata_secret_api_key: PINATA_SECRET_API_KEY,
+          },
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+      const imageCid = result.IpfsHash;
+      const metadataLink = await uploadMetadataToPinata(
+        imageCid,
+        eventDate,
+        eventTime
+      );
+      setImageURI(`ipfs://${imageCid}`);
+      setMetadataURI(metadataLink);
+
+      console.log("Image uploaded to IPFS:", `ipfs://${imageCid}`);
+      console.log("Metadata uploaded to IPFS:", metadataLink);
+
+      return metadataLink;
+    } catch (error) {
+      console.error("Error uploading image to IPFS:", error);
+      throw error;
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -67,10 +152,77 @@ export default function List() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { writeContract } = useWriteContract();
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setShowModal(true);
-  };
+
+    if (!file) {
+      alert("Please select an image file first");
+      return;
+    }
+
+    try {
+      setShowModal(true);
+      const formData = new FormData(e.currentTarget as HTMLFormElement);
+      const eventDate = formData.get("event-date") as string;
+      const eventTime = formData.get("event-time") as string;
+      const resellingPrice = formData.get("reselling-price") as string;
+
+      console.log("Starting IPFS upload process...");
+
+      // Wait for the upload to complete and get the metadata URI
+      const metadataLink = await uploadToPinata(file, eventDate, eventTime);
+
+      console.log("Upload completed successfully, metadata URI:", metadataLink);
+
+      // Convert the string to a number for the contract
+      const priceInWei = parseFloat(resellingPrice);
+      if (isNaN(priceInWei)) {
+        throw new Error("Invalid price entered");
+      }
+
+      console.log(
+        `Calling writeContract with args: [${metadataLink}, ${priceInWei}]`
+      );
+      console.log(
+        `Contract address: 0x${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`
+      );
+
+      // Make sure we're not trying to call writeContract with undefined values
+      if (!metadataLink || metadataLink.trim() === "") {
+        throw new Error("Metadata URI is empty or undefined");
+      }
+
+      // Now call the contract with explicit error handling
+      try {
+        writeContract({
+          address: `0x${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+          abi: abi,
+          functionName: "listTicket",
+          args: [metadataLink, priceInWei],
+        });
+        console.log("Contract write function called successfully");
+      } catch (contractError) {
+        console.error("Error in writeContract call:", contractError);
+        throw new Error(
+          `Contract write failed: ${contractError.message || contractError}`
+        );
+      }
+
+      alert("Your NFT ticket has been listed successfully!");
+    } catch (error) {
+      console.error("Error during submission:", error);
+      alert(
+        `There was an error listing your ticket: ${
+          error.message || "Please try again."
+        }`
+      );
+    } finally {
+      // Keep the modal open until transaction completes or fails
+      // You can decide when to close it based on your requirements
+    }
+  }
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -115,7 +267,9 @@ export default function List() {
                 >
                   <Upload
                     size={40}
-                    className={`${isDragging ? "text-white" : "text-neutral-500"}`}
+                    className={`${
+                      isDragging ? "text-white" : "text-neutral-500"
+                    }`}
                   />
                   <span className="relative text-xl cursor-pointer bg-neutral-800 rounded-md font-medium text-neutral-400 hover:text-neutral-300">
                     {fileName ? fileName : "Drag image here or click to upload"}
@@ -204,7 +358,8 @@ export default function List() {
               <motion.input
                 whileFocus={{ scale: 1.02 }}
                 name="reselling-price"
-                type="text"
+                type="number"
+                step={0.01}
                 className="mt-1 block w-100 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-neutral-500 focus:border-neutral-500 sm:text-sm"
                 placeholder="0.1 eth"
               />
@@ -223,7 +378,7 @@ export default function List() {
       </form>
 
       {/* Modal with AnimatePresence for exit animations */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {showModal && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -253,7 +408,7 @@ export default function List() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </motion.div>
   );
 }
