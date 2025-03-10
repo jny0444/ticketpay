@@ -1,0 +1,12 @@
+/* font-sans */
+@import url("https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap");
+
+/* font-serif */
+@import url("https://fonts.googleapis.com/css2?family=Oranienbaum&display=swap");
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Work Sans", sans-serif;
+  --font-serif: "Oranienbaum", serif;
+}
