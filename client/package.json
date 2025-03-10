@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/env": "^15.2.1",
     "@reclaimprotocol/js-sdk": "^2.2.2",
     "@tanstack/react-query": "^5.67.2",
+    "dotenv": "^16.4.7",
     "lucide-react": "^0.479.0",
     "motion": "^12.4.10",
     "next": "15.2.1",
