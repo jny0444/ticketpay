@@ -6,8 +6,6 @@ const queryClient = new QueryClient();
 
 export default function Home() {
   return (
-    <WagmiProvider config={config}>
-      <div></div>
-    </WagmiProvider>
+    <div> Hello World </div>
   );
 }
