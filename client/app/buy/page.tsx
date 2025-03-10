@@ -178,6 +178,7 @@ export default function Buy() {
             filteredTickets.map((ticket, index) => (
               <TicketCard
                 key={ticket.id}
+                id={ticket.id} // Make sure to pass the ID
                 eventName={ticket.eventName}
                 date={ticket.date}
                 price={ticket.price}

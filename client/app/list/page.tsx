@@ -120,8 +120,6 @@ export default function List() {
     setUploadError(null);
 
     try {
-      // We don't have event date and time yet, so we'll pass empty strings
-      // The metadata will still be created with the image, and we'll update it on form submit
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -141,7 +139,6 @@ export default function List() {
       const imageCid = result.IpfsHash;
       setImageURI(`ipfs://${imageCid}`);
 
-      // Create initial metadata, we'll update this on form submit
       const metadataLink = await uploadMetadataToPinata(
         imageCid,
         "To be updated",
@@ -172,19 +169,15 @@ export default function List() {
     const eventTime = formData.get("event-time") as string;
     const resellingPrice = formData.get("reselling-price") as string;
 
-    // If image was already uploaded but we need to update metadata with final event details
     if (imageURI && metadataURI) {
-      // Extract image CID from existing imageURI
       const imageCid = imageURI.replace("ipfs://", "");
 
-      // Update metadata with final event details
       const updatedMetadata = await uploadMetadataToPinata(
         imageCid,
         eventDate,
         eventTime
       );
 
-      // Call smart contract with the updated metadata
       writeContract({
         address: `0x${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
         abi: abi,
@@ -199,53 +192,51 @@ export default function List() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 text-white">
       <form onSubmit={handleSubmit}>
-        <div className="bg-neutral-800 p-6 rounded-lg shadow-lg flex gap-10">
-          <div className="">
-            <div>
-              <div className="space-y-1 text-center flex flex-col items-center justify-center">
-                <div className="flex flex-col text-sm text-neutral-600 items-center gap-2">
-                  {uploadStatus === "uploading" ? (
-                    <Loader2 size={40} className="text-white animate-spin" />
-                  ) : uploadStatus === "success" ? (
-                    <CheckCircle size={40} className="text-green-500" />
-                  ) : uploadStatus === "error" ? (
-                    <AlertCircle size={40} className="text-red-500" />
-                  ) : (
-                    <Upload
-                      size={40}
-                      className={`${
-                        isDragging ? "text-white" : "text-neutral-500"
-                      }`}
-                    />
-                  )}
-                  <span
-                    className="relative text-xl cursor-pointer bg-neutral-800 rounded-md font-medium text-neutral-400 hover:text-neutral-300"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {fileName
-                      ? uploadStatus === "uploading"
-                        ? `Uploading ${fileName}...`
-                        : fileName
-                      : "Drag image here or click to upload"}
-                  </span>
-                  <input
-                    ref={fileInputRef}
-                    id="file-upload"
-                    name="file-upload"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                  />
-                </div>
-                {uploadError ? (
-                  <p className="text-red-500 text-sm">{uploadError}</p>
+        <div className="bg-neutral-800 p-6 rounded-lg shadow-lg flex items-center gap-10">
+          <div className="border-2 border-dashed border-neutral-600 p-6 rounded-lg w-100 h-100 flex items-center justify-center">
+            <div className="space-y-1 text-center flex flex-col items-center justify-center">
+              <div className="flex flex-col text-sm text-neutral-600 items-center gap-2">
+                {uploadStatus === "uploading" ? (
+                  <Loader2 size={40} className="text-white animate-spin" />
+                ) : uploadStatus === "success" ? (
+                  <CheckCircle size={40} className="text-green-500" />
+                ) : uploadStatus === "error" ? (
+                  <AlertCircle size={40} className="text-red-500" />
                 ) : (
-                  <p className="text-neutral-500 text-lg">
-                    Images up to 10MB (JPG, PNG, GIF)
-                  </p>
+                  <Upload
+                    size={40}
+                    className={`${
+                      isDragging ? "text-white" : "text-neutral-500"
+                    }`}
+                  />
                 )}
+                <span
+                  className="relative text-xl cursor-pointer bg-neutral-800 rounded-md font-medium text-neutral-400 hover:text-neutral-300"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {fileName
+                    ? uploadStatus === "uploading"
+                      ? `Uploading ${fileName}...`
+                      : fileName
+                    : "Drag image here or click to upload"}
+                </span>
+                <input
+                  ref={fileInputRef}
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                />
               </div>
+              {uploadError ? (
+                <p className="text-red-500 text-sm">{uploadError}</p>
+              ) : (
+                <p className="text-neutral-500 text-lg">
+                  Images up to 10MB (JPG, PNG, GIF)
+                </p>
+              )}
             </div>
           </div>
           <div className="flex flex-col items-center justify-center">
