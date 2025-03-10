@@ -1,6 +1,13 @@
 "use client";
 
-import { ListPlus, Upload, Calendar, Wallet } from "lucide-react";
+import {
+  ListPlus,
+  Upload,
+  Calendar,
+  Wallet,
+  Clock,
+  Ticket,
+} from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef } from "react";
 import ReclaimDemo from "@/components/ReclaimProvider";
@@ -60,10 +67,6 @@ export default function List() {
     }
   };
 
-  const handlePinata = (e) => {
-    e.preventDefault();
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setShowModal(true);
@@ -87,7 +90,7 @@ export default function List() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-neutral-800 p-6 rounded-lg shadow-lg flex gap-10"
         >
-          <div className="mb-4">
+          <div className="">
             <motion.div
               whileHover={{ scale: 1.01 }}
               animate={{
@@ -138,10 +141,10 @@ export default function List() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mb-5"
+              className="mb-3"
             >
               <label className="text-xl font-medium text-neutral-300 flex items-center gap-2">
-                <Calendar size={18} />
+                <Ticket size={18} />
                 Event Name
               </label>
               <motion.input
@@ -156,7 +159,43 @@ export default function List() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mb-14"
+              className="mb-3"
+            >
+              <label className="text-xl font-medium text-neutral-300 flex items-center gap-2">
+                <Calendar size={18} />
+                Event Date
+              </label>
+              <motion.input
+                whileFocus={{ scale: 1.02 }}
+                name="event-date"
+                type="date"
+                className="mt-1 block w-100 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-neutral-500 focus:border-neutral-500 sm:text-sm text-white"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mb-3"
+            >
+              <label className="text-xl font-medium text-neutral-300 flex items-center gap-2">
+                <Clock size={18} />
+                Event Time
+              </label>
+              <motion.input
+                whileFocus={{ scale: 1.02 }}
+                name="event-time"
+                type="time"
+                className="mt-1 block w-100 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded-md shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-neutral-500 focus:border-neutral-500 sm:text-sm text-white"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="mb-10"
             >
               <label className="text-xl font-medium text-neutral-300 flex items-center gap-2">
                 <Wallet size={18} />
@@ -184,7 +223,7 @@ export default function List() {
       </form>
 
       {/* Modal with AnimatePresence for exit animations */}
-      {/* <AnimatePresence>
+      <AnimatePresence>
         {showModal && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -214,7 +253,7 @@ export default function List() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence> */}
+      </AnimatePresence>
     </motion.div>
   );
 }
