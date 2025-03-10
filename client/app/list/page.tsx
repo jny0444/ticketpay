@@ -7,6 +7,9 @@ import {
   Wallet,
   Clock,
   Ticket,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import abi from "@/constants";
@@ -55,6 +58,11 @@ export default function List() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageURI, setImageURI] = useState("");
   const [metadataURI, setMetadataURI] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "uploading" | "success" | "error"
+  >("idle");
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const uploadToPinata = async (
     fileToUpload: File,
@@ -101,27 +109,92 @@ export default function List() {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setFileName(selectedFile.name);
+    setUploadStatus("uploading");
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      // We don't have event date and time yet, so we'll pass empty strings
+      // The metadata will still be created with the image, and we'll update it on form submit
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const response = await fetch(
+        "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        {
+          method: "POST",
+          headers: {
+            pinata_api_key: PINATA_API_KEY,
+            pinata_secret_api_key: PINATA_SECRET_API_KEY,
+          },
+          body: formData,
+        }
+      );
+
+      const result = await response.json();
+      const imageCid = result.IpfsHash;
+      setImageURI(`ipfs://${imageCid}`);
+
+      // Create initial metadata, we'll update this on form submit
+      const metadataLink = await uploadMetadataToPinata(
+        imageCid,
+        "To be updated",
+        "To be updated"
+      );
+      setMetadataURI(metadataLink);
+      setUploadStatus("success");
+
+      console.log("Image uploaded to IPFS:", `ipfs://${imageCid}`);
+      console.log("Initial metadata uploaded to IPFS:", metadataLink);
+    } catch (error) {
+      console.error("Error uploading image to IPFS:", error);
+      setUploadStatus("error");
+      setUploadError("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const { writeContract } = useWriteContract();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    const file = new FormData(e.currentTarget as HTMLFormElement);
-    const eventDate = file.get("event-date") as string;
-    const eventTime = file.get("event-time") as string;
-    const resellingPrice = file.get("resellin-price") as string;
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-    const metadata = uploadToPinata(
-      fileInputRef.current.files[0],
-      eventDate,
-      eventTime
-    );
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+    const eventName = formData.get("event-name") as string;
+    const eventDate = formData.get("event-date") as string;
+    const eventTime = formData.get("event-time") as string;
+    const resellingPrice = formData.get("reselling-price") as string;
 
-    writeContract({
-      address: `0x${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
-      abi: abi,
-      functionName: "listTicket",
-      args: [metadata, resellingPrice],
-    });
-  };
+    // If image was already uploaded but we need to update metadata with final event details
+    if (imageURI && metadataURI) {
+      // Extract image CID from existing imageURI
+      const imageCid = imageURI.replace("ipfs://", "");
+
+      // Update metadata with final event details
+      const updatedMetadata = await uploadMetadataToPinata(
+        imageCid,
+        eventDate,
+        eventTime
+      );
+
+      // Call smart contract with the updated metadata
+      writeContract({
+        address: `0x${process.env.NEXT_PUBLIC_CONTRACT_ADDRESS}`,
+        abi: abi,
+        functionName: "listTicket",
+        args: [updatedMetadata, resellingPrice],
+      });
+    } else {
+      alert("Please upload an image first");
+    }
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-950 text-white">
@@ -131,14 +204,29 @@ export default function List() {
             <div>
               <div className="space-y-1 text-center flex flex-col items-center justify-center">
                 <div className="flex flex-col text-sm text-neutral-600 items-center gap-2">
-                  <Upload
-                    size={40}
-                    className={`${
-                      isDragging ? "text-white" : "text-neutral-500"
-                    }`}
-                  />
-                  <span className="relative text-xl cursor-pointer bg-neutral-800 rounded-md font-medium text-neutral-400 hover:text-neutral-300">
-                    {fileName ? fileName : "Drag image here or click to upload"}
+                  {uploadStatus === "uploading" ? (
+                    <Loader2 size={40} className="text-white animate-spin" />
+                  ) : uploadStatus === "success" ? (
+                    <CheckCircle size={40} className="text-green-500" />
+                  ) : uploadStatus === "error" ? (
+                    <AlertCircle size={40} className="text-red-500" />
+                  ) : (
+                    <Upload
+                      size={40}
+                      className={`${
+                        isDragging ? "text-white" : "text-neutral-500"
+                      }`}
+                    />
+                  )}
+                  <span
+                    className="relative text-xl cursor-pointer bg-neutral-800 rounded-md font-medium text-neutral-400 hover:text-neutral-300"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {fileName
+                      ? uploadStatus === "uploading"
+                        ? `Uploading ${fileName}...`
+                        : fileName
+                      : "Drag image here or click to upload"}
                   </span>
                   <input
                     ref={fileInputRef}
@@ -147,11 +235,16 @@ export default function List() {
                     type="file"
                     accept="image/*"
                     className="sr-only"
+                    onChange={handleFileChange}
                   />
                 </div>
-                <p className="text-neutral-500 text-lg">
-                  Images up to 10MB (JPG, PNG, GIF)
-                </p>
+                {uploadError ? (
+                  <p className="text-red-500 text-sm">{uploadError}</p>
+                ) : (
+                  <p className="text-neutral-500 text-lg">
+                    Images up to 10MB (JPG, PNG, GIF)
+                  </p>
+                )}
               </div>
             </div>
           </div>
