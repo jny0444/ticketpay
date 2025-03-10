@@ -3,7 +3,6 @@
 import {
   ListPlus,
   EllipsisVertical,
-  Ticket,
   Unlink2,
   ShoppingBag,
   Link2,
