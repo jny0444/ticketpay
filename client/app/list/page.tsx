@@ -8,12 +8,14 @@ import ReclaimDemo from "@/components/ReclaimProvider";
 export default function List() {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [showModal, setShowModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFileName(e.target.files[0].name);
+      setFile(e.target.files[0]);
     }
   };
 
@@ -57,6 +59,10 @@ export default function List() {
       }
     }
   };
+
+  const handlePinata = (e) => {
+    e.preventDefault();
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
