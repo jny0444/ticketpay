@@ -1,7 +1,7 @@
 export default function Home() {
   return (
-    <div>
+    <WagmiProvider config={config}>
       <div></div>
-    </div>
+    </WagmiProvider>
   );
 }
