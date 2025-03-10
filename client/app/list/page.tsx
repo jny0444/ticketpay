@@ -1,6 +1,6 @@
 "use client";
 
-import { ListPlus, Upload } from "lucide-react";
+import { ListPlus, Upload, Calendar, Wallet } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useRef } from "react";
 
@@ -62,13 +62,6 @@ export default function List() {
         className="bg-neutral-800 p-6 rounded-lg shadow-lg flex gap-10"
       >
         <div className="mb-4">
-          <motion.label
-            initial={{ x: -10 }}
-            animate={{ x: 0 }}
-            className="block text-2xl font-medium text-neutral-300"
-          >
-            Upload PDF
-          </motion.label>
           <motion.div
             whileHover={{ scale: 1.01 }}
             animate={{
@@ -119,7 +112,8 @@ export default function List() {
             transition={{ delay: 0.3 }}
             className="mb-5"
           >
-            <label className="block text-xl font-medium text-neutral-300">
+            <label className="block text-xl font-medium text-neutral-300 flex items-center gap-2">
+              <Calendar size={18} />
               Event Name
             </label>
             <motion.input
@@ -136,7 +130,8 @@ export default function List() {
             transition={{ delay: 0.4 }}
             className="mb-14"
           >
-            <label className="block text-xl font-medium text-neutral-300">
+            <label className="block text-xl font-medium text-neutral-300 flex items-center gap-2">
+              <Wallet size={18} />
               Reselling Price
             </label>
             <motion.input
@@ -148,10 +143,10 @@ export default function List() {
             />
           </motion.div>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 1 }}
             type="button"
-            className="w-full text-lg duration-200 flex items-center gap-1.5 justify-center py-2 px-4 border border-transparent font-medium rounded-md text-white bg-neutral-600 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+            className="w-full text-lg duration-200 flex items-center gap-1.5 justify-center py-2 px-4 border border-transparent font-medium rounded-md text-white bg-neutral-600 hover:bg-neutral-700"
           >
             <ListPlus />
             List

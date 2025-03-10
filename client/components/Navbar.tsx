@@ -37,7 +37,7 @@ export default function Navbar() {
               <motion.div
                 className="absolute top-full -left-6 bg-neutral-100 rounded-b-xl rounded-t-none py-5 w-120 flex flex-col justify-center items-center gap-1 border-t-2 border-neutral-300"
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 110 }}
+                animate={{ opacity: 1, height: 120 }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
                 style={{ marginTop: 12 }}
