@@ -17,8 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-neutral-950 selection:text-black selection:bg-neutral-100">
-        <Navbar />
-        {children}
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

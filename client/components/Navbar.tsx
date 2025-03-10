@@ -10,9 +10,12 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useState } from "react";
 import Link from "next/link";
+import { useWallet } from "@/hooks/useWallet";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const {isConnected, connectWallet, disconnect, address} = useWallet();
 
   return (
     <>
@@ -81,13 +84,25 @@ export default function Navbar() {
           Bag (0)
         </motion.div>
       </div>
+      {isConnected ? (
       <motion.div
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 1 }}
         className="fixed right-5 top-5 bg-white text-black px-4 py-2 rounded-2xl z-50 flex gap-2 items-center font-sans text-lg"
+        onClick={() => disconnect()}
+      >
+        {`${address.slice(0,5)}...${address.slice(-3)}`} <Unlink2 size={30} />
+      </motion.div>
+      ) : (
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 1 }}
+        className="fixed right-5 top-5 bg-white text-black px-4 py-2 rounded-2xl z-50 flex gap-2 items-center font-sans text-lg"
+        onClick={() => connectWallet()}
       >
         Connect <Unlink2 size={30} />
       </motion.div>
+        )}
     </>
   );
 }
