@@ -8,5 +8,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@reclaimprotocol/js-sdk": "^2.2.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
 }
