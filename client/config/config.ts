@@ -1,6 +1,6 @@
-import { createConfig, http, injected } from "wagmi";
+import { createConfig, http } from "wagmi";
 import { hardhat } from "wagmi/chains";
-import { metaMask } from "wagmi/connectors";
+import { metaMask, injected } from "wagmi/connectors";
 
 export const config = createConfig({
     chains: [hardhat],
@@ -10,5 +10,3 @@ export const config = createConfig({
     },
     ssr: true,
 })
-
-
