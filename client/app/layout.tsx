@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import "@/styles/globals.css";
-
-import { Providers } from "@/components/Providers";
+import "./globals.css";
+import { WagmiProvider } from "wagmi";
+import { config } from "@/config/config";
+import Providers from "@/components/Provider";
 
 export const metadata: Metadata = {
   title: "TicketPay",
-  description: "Resell ticket platform on chain",
+  description: "Resell your tickets with ease",
 };
 
 export default function RootLayout({
@@ -15,10 +16,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-neutral-950 selection:text-black selection:bg-neutral-100">
-        <Providers>
-          {children}
-        </Providers>
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
