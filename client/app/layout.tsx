@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { WagmiProvider } from "wagmi";
-import { config } from "@/config/config";
 import Providers from "@/components/Provider";
 
 export const metadata: Metadata = {
