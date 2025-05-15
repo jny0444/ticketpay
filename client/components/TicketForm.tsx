@@ -1,39 +1,37 @@
 "use client";
 
 import { useState } from "react";
+import { pinata } from "@/utils/config";
 
 export default function Home() {
   const [file, setFile] = useState<File>();
-  const [url, setUrl] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const [cid, setCid] = useState<string | null>(null);
+
 
   const uploadFile = async () => {
+    if (!file) {
+      alert("No file selected");
+      return;
+    }
+
     try {
-      if (!file) {
-        alert("No file selected");
-        return;
-      }
-
       setUploading(true);
-      const data = new FormData();
-      data.set("file", file);
-      const uploadRequest = await fetch("/api/url", {
-        method: "POST",
-        body: data,
-      });
+      const urlRequest = await fetch("/api/url"); // Fetches the temporary upload URL
+      const urlResponse = await urlRequest.json(); // Parse response
+      console.log(urlResponse);
+      const upload = await pinata.upload.file(file).url(urlResponse.url); // Upload the file with the signed URL
 
-      if (!uploadRequest.ok) {
-        const errorData = await uploadRequest.json();
-        throw new Error(errorData.error || "Failed to upload");
-      }
+      setUrl(urlResponse.url); // Get the URL from the upload response
+      setCid(upload.cid); // Get the CID from the upload response
 
-      const signedUrl = await uploadRequest.json();
-      setUrl(signedUrl);
+      console.log(upload);
       setUploading(false);
     } catch (e) {
-      console.error(e);
+      console.log(e);
       setUploading(false);
-      alert("Trouble uploading file to IPFS");
+      alert("Trouble uploading file");
     }
   };
 
@@ -47,8 +45,10 @@ export default function Home() {
       <button type="button" disabled={uploading} onClick={uploadFile}>
         {uploading ? "Uploading..." : "Upload"}
       </button>
-      {/* Add a conditional looking for the signed url and use it as the source */}
-      {url && <img src={url} alt="Image from Pinata" />}
+      <a href={url ?? ""} target="_blank" rel="noopener noreferrer">
+        {url ? "View File" : "No file uploaded yet"}
+      </a>
+      <p>{cid ? `CID: ${cid}` : "No CID available"}</p>
     </div>
   );
 }
